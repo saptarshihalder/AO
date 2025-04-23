@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strategic Drone Base Optimization Simulation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            border-radius: 5px;
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+            text-align: center;
+        }
+        .description {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .simulation-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .map-container {
+            flex: 1;
+            min-width: 400px;
+            position: relative;
+        }
+        .controls {
+            flex: 1;
+            min-width: 300px;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        canvas {
+            display: block;
+            background-color: white;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            width: 100%;
+            height: 400px;
+        }
+        .legend {
+            margin: 10px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-right: 15px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            border: 1px solid #999;
+        }
+        .control-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="range"], select {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        .value-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            color: #666;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .metric {
+            flex: 1;
+            min-width: 150px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+        .metric h3 {
+            margin: 0 0 5px 0;
+            font-size: 1em;
+            color: #333;
+        }
+        .metric p {
+            margin: 0;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .tab {
+            padding: 10px 15px;
+            background-color: #f0f0f0;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: white;
+            border-bottom: 1px solid white;
+            position: relative;
+            z-index: 1;
+        }
+        .tab-content {
+            display: none;
+            border: 1px solid #ddd;
+            padding: 15px;
+            background-color: white;
+            border-radius: 0 5px 5px 5px;
+            margin-top: -1px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .grid-size-warning {
+            color: #ff6600;
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: none;
+        }
+        /* Animation styles */
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.2); opacity: 0.9; }
+            100% { transform: scale(1); opacity: 0.7; }
+        }
+        @keyframes fly {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(var(--fly-x), var(--fly-y)) scale(0.8); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes highlight {
+            0% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 165, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0); }
+        }
+        .drone {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            z-index: 10;
+        }
+        .pulse-animation {
+            animation: pulse 2s infinite ease-in-out;
+        }
+        .fade-in {
+            animation: fadeIn 1s ease-in-out;
+        }
+        .highlight {
+            animation: highlight 2s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Strategic Drone Base Optimization for Disaster Response</h1>
+        
+        <div class="description">
+            <p>This simulation demonstrates strategic planning of drone bases for disaster response, based on research by MIT and JAXA. The model optimizes base locations to maximize coverage of areas likely to need search and rescue operations while ensuring equitable access to drone resources.</p>
+            <p>Use the controls to adjust parameters such as the number of bases, drone range, and optimization priorities. The simulation will strategically position drone bases and display coverage areas.</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" data-tab="simulation">Simulation</div>
+            <div class="tab" data-tab="about">About the Model</div>
+        </div>
+
+        <div class="tab-content active" id="simulation-tab">
+            <div class="simulation-area">
+                <div class="map-container">
+                    <canvas id="simulationCanvas"></canvas>
+                    <div id="droneLayer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></div>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: rgba(255, 0, 0, 0.2);"></div>
+                            <span>High Search Need</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: rgba(0, 0, 255, 0.5);"></div>
+                            <span>Drone Coverage</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: black;"></div>
+                            <span>Base Location</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: white; border: 1px dashed #999;"></div>
+                            <span>Candidate Location</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="gridSize">Grid Size:</label>
+                        <select id="gridSize">
+                            <option value="10">10×10</option>
+                            <option value="20" selected>20×20</option>
+                            <option value="30">30×30</option>
+                            <option value="40">40×40</option>
+                            <option value="50">50×50</option>
+                        </select>
+                        <div id="gridSizeWarning" class="grid-size-warning">Larger grid sizes may slow down the simulation</div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="numBases">Number of Bases (P):</label>
+                        <input type="range" id="numBases" min="1" max="10" value="3">
+                        <div class="value-display">
+                            <span>1</span>
+                            <span id="numBasesValue">3</span>
+                            <span>10</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="droneRange">Drone Range (L) in km:</label>
+                        <input type="range" id="droneRange" min="2" max="10" value="5">
+                        <div class="value-display">
+                            <span>2</span>
+                            <span id="droneRangeValue">5</span>
+                            <span>10</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="gamma">Coverage-Distance Tradeoff (γ):</label>
+                        <input type="range" id="gamma" min="0" max="100" value="20">
+                        <div class="value-display">
+                            <span>Coverage</span>
+                            <span id="gammaValue">0.20</span>
+                            <span>Distance</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="mode">Optimization Mode:</label>
+                        <select id="mode">
+                            <option value="baseline">Baseline</option>
+                            <option value="uncertainty">Base Uncertainty</option>
+                            <option value="ppr">Planning for Relocation (PPR)</option>
+                        </select>
+                    </div>
+                    
+                    <div id="uncertaintyControls" class="control-group" style="display: none;">
+                        <label for="baseFailureProbability">Base Failure Probability (r):</label>
+                        <input type="range" id="baseFailureProbability" min="0" max="90" value="30">
+                        <div class="value-display">
+                            <span>0.0</span>
+                            <span id="baseFailureProbabilityValue">0.30</span>
+                            <span>0.9</span>
+                        </div>
+                    </div>
+                    
+                    <div id="pprControls" class="control-group" style="display: none;">
+                        <label for="lambda">PPR Lambda (λ):</label>
+                        <input type="range" id="lambda" min="0" max="100" value="50">
+                        <div class="value-display">
+                            <span>0.0</span>
+                            <span id="lambdaValue">0.50</span>
+                            <span>1.0</span>
+                        </div>
+                    </div>
+                    
+                    <button id="generateProbabilities">1. Generate Search Probabilities</button>
+                    <button id="optimizeLocations" disabled>2. Optimize Base Locations</button>
+                    <button id="relocateButton" disabled>3. Simulate Disaster & Relocate</button>
+                </div>
+            </div>
+            
+            <div class="results">
+                <h2>Optimization Results</h2>
+                <div class="metrics">
+                    <div class="metric">
+                        <h3>Coverage</h3>
+                        <p id="coverageMetric">0.0%</p>
+                    </div>
+                    <div class="metric">
+                        <h3>Weighted Coverage</h3>
+                        <p id="weightedCoverageMetric">0.0%</p>
+                    </div>
+                    <div class="metric">
+                        <h3>Mean Distance to Base</h3>
+                        <p id="meanDistanceMetric">0.0 km</p>
+                    </div>
+                    <div class="metric">
+                        <h3>Gini Coefficient</h3>
+                        <p id="giniMetric">0.0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="about-tab">
+            <h2>About the Strategic Drone Base Optimization Model</h2>
+            <p>This simulation is based on the research paper "Strategic Planning of Aerial Assets for Disaster Response: Enabling Efficient and Equitable Access to Drone-Based Search Resources" by researchers from MIT and JAXA.</p>
+            
+            <h3>Key Components of the Model:</h3>
+            <ul>
+                <li><strong>Grid Representation:</strong> The region is divided into cells, each with a probability of needing search operations.</li>
+                <li><strong>Search Need Probability:</strong> Generated based on factors like elevation, population density, flood-prone areas, and historical rescue locations.</li>
+                <li><strong>Base Location Optimization:</strong> Determines the best locations for drone bases to maximize coverage and minimize response time.</li>
+                <li><strong>Coverage:</strong> A cell is "covered" if it's within the maximum flight range of at least one drone base.</li>
+                <li><strong>Distance to Nearest Base (DNB):</strong> For each covered cell, this measures how far the nearest base is.</li>
+                <li><strong>Tradeoff Parameter (γ):</strong> Controls the balance between maximizing coverage and minimizing distance to bases.</li>
+                <li><strong>Equity Measures:</strong> The Gini coefficient measures inequality in access to drone resources across the region.</li>
+            </ul>
+            
+            <h3>Advanced Features:</h3>
+            <ul>
+                <li><strong>Base Uncertainty (r):</strong> Accounts for the possibility that bases themselves might be impacted by the disaster.</li>
+                <li><strong>Planning for Potential Relocation (PPR):</strong> Strategically positions bases to allow for effective relocation if needed.</li>
+                <li><strong>Base Relocation:</strong> Optimizes the movement of bases when search probabilities change or bases become inoperable.</li>
+            </ul>
+            
+            <p>For more details, refer to the original research paper by Chin, Saravanan, Balakrishnan, and Andreeva-Mori.</p>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const simulationCanvas = document.getElementById('simulationCanvas');
+        const ctx = simulationCanvas.getContext('2d');
+        const gridSizeSelect = document.getElementById('gridSize');
+        const numBasesSlider = document.getElementById('numBases');
+        const numBasesValue = document.getElementById('numBasesValue');
+        const droneRangeSlider = document.getElementById('droneRange');
+        const droneRangeValue = document.getElementById('droneRangeValue');
+        const gammaSlider = document.getElementById('gamma');
+        const gammaValue = document.getElementById('gammaValue');
+        const modeSelect = document.getElementById('mode');
+        const baseFailureProbabilitySlider = document.getElementById('baseFailureProbability');
+        const baseFailureProbabilityValue = document.getElementById('baseFailureProbabilityValue');
+        const lambdaSlider = document.getElementById('lambda');
+        const lambdaValue = document.getElementById('lambdaValue');
+        const generateButton = document.getElementById('generateProbabilities');
+        const optimizeButton = document.getElementById('optimizeLocations');
+        const relocateButton = document.getElementById('relocateButton');
+        const uncertaintyControls = document.getElementById('uncertaintyControls');
+        const pprControls = document.getElementById('pprControls');
+        const coverageMetric = document.getElementById('coverageMetric');
+        const weightedCoverageMetric = document.getElementById('weightedCoverageMetric');
+        const meanDistanceMetric = document.getElementById('meanDistanceMetric');
+        const giniMetric = document.getElementById('giniMetric');
+        const gridSizeWarning = document.getElementById('gridSizeWarning');
+
+        // Simulation state
+        let gridSize = parseInt(gridSizeSelect.value);
+        let numBases = parseInt(numBasesSlider.value);
+        let droneRange = parseInt(droneRangeSlider.value);
+        let gamma = parseFloat(gammaSlider.value) / 100;
+        let baseFailureProbability = parseFloat(baseFailureProbabilitySlider.value) / 100;
+        let lambda = parseFloat(lambdaSlider.value) / 100;
+        let mode = modeSelect.value;
+        
+        // Simulation data
+        let cellSize;
+        let searchProbabilities = [];
+        let candidateBaseLocations = [];
+        let selectedBaseLocations = [];
+        let cellCoverage = [];
+        let closestBase = [];
+        let updatedSearchProbabilities = [];
+        let relocatedBases = [];
+        let generatedProbabilities = false;
+        let optimizedLocations = false;
+
+        // Initialize canvas and simulation
+        function initCanvas() {
+            const containerWidth = simulationCanvas.parentElement.clientWidth;
+            simulationCanvas.width = containerWidth;
+            simulationCanvas.height = containerWidth;
+            cellSize = simulationCanvas.width / gridSize;
+            
+            // Clear the canvas
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, simulationCanvas.width, simulationCanvas.height);
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 0.5;
+            
+            // Draw grid
+            for (let i = 0; i <= gridSize; i++) {
+                const pos = i * cellSize;
+                // Vertical line
+                ctx.beginPath();
+                ctx.moveTo(pos, 0);
+                ctx.lineTo(pos, simulationCanvas.height);
+                ctx.stroke();
+                
+                // Horizontal line
+                ctx.beginPath();
+                ctx.moveTo(0, pos);
+                ctx.lineTo(simulationCanvas.width, pos);
+                ctx.stroke();
+            }
+        }
+
+        // Generate search probabilities
+        function generateSearchProbabilities() {
+            searchProbabilities = [];
+            
+            // Reset simulation state
+            generatedProbabilities = true;
+            optimizedLocations = false;
+            selectedBaseLocations = [];
+            cellCoverage = [];
+            closestBase = [];
+            
+            // Enable optimize button
+            optimizeButton.disabled = false;
+            relocateButton.disabled = true;
+            
+            // Reset metrics
+            updateMetrics(0, 0, 0, 0);
+            
+            // Generate base probabilities
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    // Base probability (0-0.05)
+                    let prob = Math.random() * 0.05;
+                    searchProbabilities.push(prob);
+                }
+            }
+            
+            // Add elevation factor (lower elevation = higher probability)
+            // Create a valley in the middle with lower elevation
+            const midX = gridSize / 2;
+            const midY = gridSize / 2;
+            
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const idx = i * gridSize + j;
+                    const distToCenter = Math.sqrt((i - midX) ** 2 + (j - midY) ** 2);
+                    const elevFactor = Math.min(distToCenter / (gridSize / 2), 1);
+                    
+                    // Lower elevation = higher probability
+                    if (elevFactor < 0.2) {
+                        searchProbabilities[idx] += 0.15;
+                    }
+                }
+            }
+            
+            // Add population centers (3-5 random centers)
+            const numCenters = Math.floor(Math.random() * 3) + 3;
+            const centers = [];
+            
+            for (let c = 0; c < numCenters; c++) {
+                const centerX = Math.floor(Math.random() * gridSize);
+                const centerY = Math.floor(Math.random() * gridSize);
+                centers.push({ x: centerX, y: centerY });
+            }
+            
+            // Increase probability based on proximity to population centers
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const idx = i * gridSize + j;
+                    
+                    for (const center of centers) {
+                        const dist = Math.sqrt((i - center.x) ** 2 + (j - center.y) ** 2);
+                        if (dist < 8) {
+                            const factor = 0.25 * (1 - dist / 8);
+                            searchProbabilities[idx] += factor;
+                        }
+                    }
+                }
+            }
+            
+            // Add flood-prone areas (2-4 random areas)
+            const numFloodAreas = Math.floor(Math.random() * 3) + 2;
+            const floodAreas = [];
+            
+            for (let f = 0; f < numFloodAreas; f++) {
+                const floodX = Math.floor(Math.random() * gridSize);
+                const floodY = Math.floor(Math.random() * gridSize);
+                floodAreas.push({ x: floodX, y: floodY });
+            }
+            
+            // Increase probability for cells near flood areas
+            const floodThreshold = 3;
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const idx = i * gridSize + j;
+                    
+                    for (const flood of floodAreas) {
+                        const dist = Math.sqrt((i - flood.x) ** 2 + (j - flood.y) ** 2);
+                        if (dist < floodThreshold) {
+                            searchProbabilities[idx] += 0.25;
+                        }
+                    }
+                }
+            }
+            
+            // Add rescue locations (3-6 random locations)
+            const numRescueLocations = Math.floor(Math.random() * 4) + 3;
+            const rescueLocations = [];
+            
+            for (let r = 0; r < numRescueLocations; r++) {
+                const rescueX = Math.floor(Math.random() * gridSize);
+                const rescueY = Math.floor(Math.random() * gridSize);
+                rescueLocations.push({ x: rescueX, y: rescueY });
+            }
+            
+            // Increase probability for cells near rescue locations
+            const rescueThreshold = 5;
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const idx = i * gridSize + j;
+                    
+                    for (const rescue of rescueLocations) {
+                        const dist = Math.sqrt((i - rescue.x) ** 2 + (j - rescue.y) ** 2);
+                        if (dist < rescueThreshold) {
+                            searchProbabilities[idx] += 0.3;
+                        }
+                    }
+                }
+            }
+            
+            // Ensure all probabilities are within [0, 1]
+            searchProbabilities = searchProbabilities.map(p => Math.min(Math.max(p, 0), 1));
+            
+            // Generate candidate base locations (15-20 random locations)
+            const numCandidates = Math.floor(Math.random() * 6) + 15;
+            candidateBaseLocations = [];
+            
+            while (candidateBaseLocations.length < numCandidates) {
+                const x = Math.floor(Math.random() * gridSize);
+                const y = Math.floor(Math.random() * gridSize);
+                
+                // Check if location already exists
+                const exists = candidateBaseLocations.some(loc => loc.x === x && loc.y === y);
+                
+                if (!exists) {
+                    candidateBaseLocations.push({ x, y });
+                }
+            }
+            
+            // Draw the probabilities and candidate locations
+            drawSearchProbabilities();
+            drawCandidateBaseLocations();
+        }
+
+        // Draw the search probabilities as a heatmap
+        function drawSearchProbabilities() {
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const idx = i * gridSize + j;
+                    const prob = searchProbabilities[idx];
+                    
+                    // Use red with alpha based on probability
+                    const alpha = prob;
+                    ctx.fillStyle = `rgba(255, 0, 0, ${alpha * 0.5})`;
+                    ctx.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
+                }
+            }
+        }
+
+        // Draw candidate base locations
+        function drawCandidateBaseLocations() {
+            for (const base of candidateBaseLocations) {
+                const x = base.x * cellSize + cellSize / 2;
+                const y = base.y * cellSize + cellSize / 2;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, cellSize / 4, 0, Math.PI * 2);
+                ctx.strokeStyle = '#999';
+                ctx.setLineDash([2, 2]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+
+        // Draw selected base locations and coverage
+        function drawSelectedBaseLocations() {
+            // Clear any existing drones
+            const droneLayer = document.getElementById('droneLayer');
+            droneLayer.innerHTML = '';
+            
+            // Draw coverage areas first
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const idx = i * gridSize + j;
+                    if (cellCoverage[idx]) {
+                        // Get the closest base index
+                        const baseIdx = closestBase[idx];
+                        const base = selectedBaseLocations[baseIdx];
+                        
+                        // Create a gradient from base to edge of coverage
+                        const x = i * cellSize + cellSize / 2;
+                        const y = j * cellSize + cellSize / 2;
+                        const baseX = base.x * cellSize + cellSize / 2;
+                        const baseY = base.y * cellSize + cellSize / 2;
+                        
+                        // Use blue color for coverage areas to match the legend
+                        ctx.fillStyle = `rgba(0, 0, 255, 0.5)`;
+                        ctx.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
+                        
+                        // Highlight cells with high search probability
+                        if (searchProbabilities[idx] > 0.6) {
+                            ctx.strokeStyle = 'orange';
+                            ctx.lineWidth = 2;
+                            ctx.strokeRect(i * cellSize, j * cellSize, cellSize, cellSize);
+                        }
+                    }
+                }
+            }
+            
+            // Draw base locations on top
+            for (let i = 0; i < selectedBaseLocations.length; i++) {
+                const base = selectedBaseLocations[i];
+                const x = base.x * cellSize + cellSize / 2;
+                const y = base.y * cellSize + cellSize / 2;
+                
+                // Use a unique color for each base
+                const hue = (i * 30) % 360;
+                ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+                
+                // Draw base with pulse animation
+                ctx.beginPath();
+                ctx.arc(x, y, cellSize / 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw border
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Draw base number
+                ctx.fillStyle = 'white';
+                ctx.font = `${cellSize / 2}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText((i + 1).toString(), x, y);
+                
+                // Add a pulse effect around the base
+                const pulseDiv = document.createElement('div');
+                pulseDiv.style.position = 'absolute';
+                pulseDiv.style.left = (x - cellSize / 2) + 'px';
+                pulseDiv.style.top = (y - cellSize / 2) + 'px';
+                pulseDiv.style.width = cellSize + 'px';
+                pulseDiv.style.height = cellSize + 'px';
+                pulseDiv.style.borderRadius = '50%';
+                pulseDiv.style.backgroundColor = `hsla(${hue}, 100%, 50%, 0.3)`;
+                pulseDiv.classList.add('pulse-animation');
+                droneLayer.appendChild(pulseDiv);
+                
+                // Add animated drones for each base
+                addAnimatedDrones(base, i, hue);
+            }
+        }
+        
+        // Add animated drones that fly from bases to coverage areas
+        function addAnimatedDrones(base, baseIndex, hue) {
+            const droneLayer = document.getElementById('droneLayer');
+            const baseX = base.x * cellSize + cellSize / 2;
+            const baseY = base.y * cellSize + cellSize / 2;
+            
+            // Find cells covered by this base
+            const coveredCells = [];
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const idx = i * gridSize + j;
+                    if (cellCoverage[idx] && closestBase[idx] === baseIndex) {
+                        // Only include cells with higher search probability for animation
+                        if (searchProbabilities[idx] > 0.4) {
+                            coveredCells.push({
+                                x: i * cellSize + cellSize / 2,
+                                y: j * cellSize + cellSize / 2,
+                                prob: searchProbabilities[idx]
+                            });
+                        }
+                    }
+                }
+            }
+            
+            // Sort by probability (highest first) and limit to 3-5 drones
+            coveredCells.sort((a, b) => b.prob - a.prob);
+            const dronesToFly = Math.min(coveredCells.length, Math.floor(Math.random() * 3) + 3);
+            
+            // Create drones with animation
+            for (let i = 0; i < dronesToFly; i++) {
+                if (i < coveredCells.length) {
+                    const target = coveredCells[i];
+                    
+                    // Create drone element
+                    const drone = document.createElement('div');
+                    drone.className = 'drone';
+                    drone.style.left = (baseX - 10) + 'px';
+                    drone.style.top = (baseY - 10) + 'px';
+                    
+                    // Create SVG drone icon
+                    drone.innerHTML = `
+                    <svg viewBox="0 0 24 24" width="100%" height="100%">
+                        <path fill="hsl(${hue}, 100%, 50%)" d="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z" />
+                    </svg>`;
+                    
+                    // Set animation properties
+                    const flyX = target.x - baseX;
+                    const flyY = target.y - baseY;
+                    drone.style.setProperty('--fly-x', flyX + 'px');
+                    drone.style.setProperty('--fly-y', flyY + 'px');
+                    
+                    // Add animation with delay
+                    setTimeout(() => {
+                        drone.style.animation = `fly ${4 + Math.random() * 2}s infinite`;
+                    }, i * 500);
+                    
+                    droneLayer.appendChild(drone);
+                }
+            }
+        }
+
+        // Optimize base locations
+        function optimizeBaseLocations() {
+            if (!generatedProbabilities) {
+                alert('Please generate search probabilities first.');
+                return;
+            }
+            
+            // Show optimization in progress with animation
+            const optimizeBtn = document.getElementById('optimizeLocations');
+            const originalText = optimizeBtn.textContent;
+            optimizeBtn.textContent = "Optimizing...";
+            optimizeBtn.disabled = true;
+            
+            // Use setTimeout to allow UI to update and create a sense of processing
+            setTimeout(() => {
+                // Reset simulation state
+                optimizedLocations = true;
+                relocateButton.disabled = false;
+                
+                // Calculate distances between cells and candidate bases
+                const distances = [];
+                for (let i = 0; i < gridSize * gridSize; i++) {
+                    const cellX = Math.floor(i / gridSize);
+                    const cellY = i % gridSize;
+                    
+                    const cellDistances = [];
+                    for (let j = 0; j < candidateBaseLocations.length; j++) {
+                        const base = candidateBaseLocations[j];
+                        const dist = Math.sqrt((cellX - base.x) ** 2 + (cellY - base.y) ** 2);
+                        cellDistances.push(dist);
+                    }
+                    distances.push(cellDistances);
+                }
+                
+                // Perform optimization based on selected mode
+                if (mode === 'baseline') {
+                    optimizeBaseline(distances);
+                } else if (mode === 'uncertainty') {
+                    optimizeWithUncertainty(distances);
+                } else if (mode === 'ppr') {
+                    optimizeWithPPR(distances);
+                }
+                
+                // Animate the appearance of the optimized solution
+                redrawCanvas();
+                
+                // Add fade-in effect to the results section
+                const metricsElements = document.querySelectorAll('.metric');
+                metricsElements.forEach((elem, index) => {
+                    // Temporarily hide metrics
+                    elem.style.opacity = '0';
+                    
+                    // Fade in with delay
+                    setTimeout(() => {
+                        elem.style.opacity = '1';
+                        elem.style.transition = 'opacity 0.5s ease-in-out';
+                    }, index * 200);
+                });
+                
+                // Calculate and display metrics
+                calculateMetrics();
+                
+                // Reset button
+                optimizeBtn.textContent = originalText;
+                optimizeBtn.disabled = false;
+            }, 600);
+        }
+
+        // Baseline optimization
+        function optimizeBaseline(distances) {
+            // Simple greedy algorithm for demonstration purposes
+            // In a real implementation, this would use linear programming
+            
+            selectedBaseLocations = [];
+            cellCoverage = Array(gridSize * gridSize).fill(false);
+            closestBase = Array(gridSize * gridSize).fill(-1);
+            
+            // Calculate benefit score for each candidate base
+            const baseScores = [];
+            for (let j = 0; j < candidateBaseLocations.length; j++) {
+                let score = 0;
+                
+                for (let i = 0; i < gridSize * gridSize; i++) {
+                    const dist = distances[i][j];
+                    if (dist <= droneRange) {
+                        // Benefit is probability weighted by distance
+                        score += searchProbabilities[i] * (1 - gamma * (dist / droneRange));
+                    }
+                }
+                
+                baseScores.push({ idx: j, score });
+            }
+            
+            // Sort bases by score
+            baseScores.sort((a, b) => b.score - a.score);
+            
+            // Select top P bases
+            for (let p = 0; p < numBases; p++) {
+                if (p < baseScores.length) {
+                    const baseIdx = baseScores[p].idx;
+                    selectedBaseLocations.push(candidateBaseLocations[baseIdx]);
+                }
+            }
+            
+            // Determine coverage and closest base for each cell
+            for (let i = 0; i < gridSize * gridSize; i++) {
+                let minDist = Infinity;
+                let closestBaseIdx = -1;
+                
+                for (let j = 0; j < selectedBaseLocations.length; j++) {
+                    const baseIdx = candidateBaseLocations.findIndex(
+                        b => b.x === selectedBaseLocations[j].x && b.y === selectedBaseLocations[j].y
+                    );
+                    const dist = distances[i][baseIdx];
+                    
+                    if (dist <= droneRange && dist < minDist) {
+                        minDist = dist;
+                        closestBaseIdx = j;
+                    }
+                }
+                
+                if (closestBaseIdx !== -1) {
+                    cellCoverage[i] = true;
+                    closestBase[i] = closestBaseIdx;
+                }
+            }
+        }
+
+        // Optimization with base uncertainty
+        function optimizeWithUncertainty(distances) {
+            // Similar to baseline but considering base failure probability
+            selectedBaseLocations = [];
+            cellCoverage = Array(gridSize * gridSize).fill(false);
+            closestBase = Array(gridSize * gridSize).fill(-1);
+            
+            // Calculate benefit score for each candidate base
+            // Taking into account probability of base failure
+            const baseScores = [];
+            for (let j = 0; j < candidateBaseLocations.length; j++) {
+                let score = 0;
+                
+                for (let i = 0; i < gridSize * gridSize; i++) {
+                    const dist = distances[i][j];
+                    if (dist <= droneRange) {
+                        // Base benefit, adjusted by probability of operation
+                        score += searchProbabilities[i] * (1 - baseFailureProbability) * (1 - gamma * (dist / droneRange));
+                    }
+                }
+                
+                baseScores.push({ idx: j, score });
+            }
+            
+            // Sort bases by score
+            baseScores.sort((a, b) => b.score - a.score);
+            
+            // Select top P bases
+            for (let p = 0; p < numBases; p++) {
+                if (p < baseScores.length) {
+                    const baseIdx = baseScores[p].idx;
+                    selectedBaseLocations.push(candidateBaseLocations[baseIdx]);
+                }
+            }
+            
+            // Determine coverage and closest base for each cell
+            // A cell is covered if at least one base can reach it
+            // (accounting for base failure probability)
+            for (let i = 0; i < gridSize * gridSize; i++) {
+                // Calculate probability of cell being covered
+                let coverProb = 0;
+                let minDist = Infinity;
+                let closestBaseIdx = -1;
+                
+                for (let j = 0; j < selectedBaseLocations.length; j++) {
+                    const baseIdx = candidateBaseLocations.findIndex(
+                        b => b.x === selectedBaseLocations[j].x && b.y === selectedBaseLocations[j].y
+                    );
+                    const dist = distances[i][baseIdx];
+                    
+                    if (dist <= droneRange) {
+                        // Update probability of being covered
+                        // P(covered) = 1 - P(all bases fail) = 1 - (r^k)
+                        // where k is number of bases that can cover the cell
+                        coverProb = 1 - Math.pow(baseFailureProbability, 1);
+                        
+                        if (dist < minDist) {
+                            minDist = dist;
+                            closestBaseIdx = j;
+                        }
+                    }
+                }
+                
+                // Cell is covered if coverage probability > 0.5
+                if (coverProb > 0.5 && closestBaseIdx !== -1) {
+                    cellCoverage[i] = true;
+                    closestBase[i] = closestBaseIdx;
+                }
+            }
+        }
+
+        // Optimization with Planning for Potential Relocation (PPR)
+        function optimizeWithPPR(distances) {
+            // Similar to baseline but with added incentive for spacing bases
+            // to allow for future relocation
+            selectedBaseLocations = [];
+            cellCoverage = Array(gridSize * gridSize).fill(false);
+            closestBase = Array(gridSize * gridSize).fill(-1);
+            
+            // First pass: calculate basic scores like in baseline
+            const baseScores = [];
+            for (let j = 0; j < candidateBaseLocations.length; j++) {
+                let score = 0;
+                
+                for (let i = 0; i < gridSize * gridSize; i++) {
+                    const dist = distances[i][j];
+                    if (dist <= droneRange) {
+                        // Benefit is probability weighted by distance
+                        score += searchProbabilities[i] * (1 - gamma * (dist / droneRange));
+                    }
+                }
+                
+                baseScores.push({ idx: j, score });
+            }
+            
+            // Second pass: add relocation potential score
+            const relocationRadius = droneRange; // Use drone range as relocation radius
+            
+            for (let j = 0; j < candidateBaseLocations.length; j++) {
+                let relocationScore = 0;
+                
+                // Check cells that could be covered by relocation from this base
+                for (let i = 0; i < gridSize * gridSize; i++) {
+                    // Skip cells already covered by this base
+                    const distJ = distances[i][j];
+                    if (distJ <= droneRange) continue;
+                    
+                    // Find potential relocation sites within relocation radius
+                    for (let k = 0; k < candidateBaseLocations.length; k++) {
+                        if (k === j) continue;
+                        
+                        // Check if k is within relocation radius of j
+                        const distBetweenBases = Math.sqrt(
+                            Math.pow(candidateBaseLocations[j].x - candidateBaseLocations[k].x, 2) +
+                            Math.pow(candidateBaseLocations[j].y - candidateBaseLocations[k].y, 2)
+                        );
+                        
+                        if (distBetweenBases <= relocationRadius) {
+                            // Check if cell i could be covered from k
+                            const distK = distances[i][k];
+                            if (distK <= droneRange) {
+                                // Add weighted probability to relocation score
+                                relocationScore += lambda * searchProbabilities[i];
+                                break; // Only count once per cell
+                            }
+                        }
+                    }
+                }
+                
+                // Add relocation score to base score
+                baseScores[j].score += relocationScore;
+            }
+            
+            // Sort bases by updated score
+            baseScores.sort((a, b) => b.score - a.score);
+            
+            // Select top P bases
+            for (let p = 0; p < numBases; p++) {
+                if (p < baseScores.length) {
+                    const baseIdx = baseScores[p].idx;
+                    selectedBaseLocations.push(candidateBaseLocations[baseIdx]);
+                }
+            }
+            
+            // Determine coverage and closest base for each cell
+            for (let i = 0; i < gridSize * gridSize; i++) {
+                let minDist = Infinity;
+                let closestBaseIdx = -1;
+                
+                for (let j = 0; j < selectedBaseLocations.length; j++) {
+                    const baseIdx = candidateBaseLocations.findIndex(
+                        b => b.x === selectedBaseLocations[j].x && b.y === selectedBaseLocations[j].y
+                    );
+                    const dist = distances[i][baseIdx];
+                    
+                    if (dist <= droneRange && dist < minDist) {
+                        minDist = dist;
+                        closestBaseIdx = j;
+                    }
+                }
+                
+                if (closestBaseIdx !== -1) {
+                    cellCoverage[i] = true;
+                    closestBase[i] = closestBaseIdx;
+                }
+            }
+        }
+
+        // Simulate disaster and relocate bases
+        function simulateDisasterAndRelocate() {
+            if (!optimizedLocations) {
+                alert('Please optimize base locations first.');
+                return;
+            }
+            
+            // Show animation in progress
+            const relocateBtn = document.getElementById('relocateButton');
+            const originalText = relocateBtn.textContent;
+            relocateBtn.textContent = "Simulating Disaster...";
+            relocateBtn.disabled = true;
+            
+            // Create disaster effect animation
+            const canvas = document.getElementById('simulationCanvas');
+            const overlay = document.createElement('div');
+            overlay.style.position = 'absolute';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            overlay.style.backgroundColor = 'rgba(255, 0, 0, 0.2)';
+            overlay.style.zIndex = '20';
+            overlay.style.pointerEvents = 'none';
+            canvas.parentElement.appendChild(overlay);
+            
+            // Flash effect for disaster
+            let flashCount = 0;
+            const flashInterval = setInterval(() => {
+                overlay.style.opacity = flashCount % 2 === 0 ? '0.5' : '0';
+                flashCount++;
+                if (flashCount > 5) {
+                    clearInterval(flashInterval);
+                    canvas.parentElement.removeChild(overlay);
+                    processDisaster();
+                }
+            }, 300);
+            
+            function processDisaster() {
+                // Generate updated search probabilities
+                updatedSearchProbabilities = [];
+                
+                // Apply a shift/transform to the probabilities
+                for (let i = 0; i < gridSize; i++) {
+                    for (let j = 0; j < gridSize; j++) {
+                        const idx = i * gridSize + j;
+                        // Apply a sinusoidal shift to simulate changing conditions
+                        let newProb = searchProbabilities[idx] * 
+                            (0.7 + 0.6 * Math.sin(i/5) * Math.cos(j/5));
+                        
+                        // Ensure value is in [0, 1]
+                        newProb = Math.min(Math.max(newProb, 0), 1);
+                        updatedSearchProbabilities.push(newProb);
+                    }
+                }
+                
+                // Simulate base failures based on mode
+                let disabledBases = [];
+                if (mode === 'uncertainty') {
+                    // Randomly disable bases based on failure probability
+                    for (let i = 0; i < selectedBaseLocations.length; i++) {
+                        if (Math.random() < baseFailureProbability) {
+                            disabledBases.push(i);
+                        }
+                    }
+                    
+                    // Show disabled bases with animation
+                    if (disabledBases.length > 0) {
+                        setTimeout(() => {
+                            relocateBtn.textContent = "Bases Impacted!";
+                            
+                            // Highlight disabled bases
+                            for (const baseIdx of disabledBases) {
+                                const base = selectedBaseLocations[baseIdx];
+                                const x = base.x * cellSize + cellSize / 2;
+                                const y = base.y * cellSize + cellSize / 2;
+                                
+                                // Add warning marker
+                                const warningDiv = document.createElement('div');
+                                warningDiv.style.position = 'absolute';
+                                warningDiv.style.left = (x - cellSize) + 'px';
+                                warningDiv.style.top = (y - cellSize) + 'px';
+                                warningDiv.style.width = (cellSize * 2) + 'px';
+                                warningDiv.style.height = (cellSize * 2) + 'px';
+                                warningDiv.style.borderRadius = '50%';
+                                warningDiv.style.border = '3px dashed red';
+                                warningDiv.classList.add('pulse-animation');
+                                document.getElementById('droneLayer').appendChild(warningDiv);
+                            }
+                            
+                            // Wait a moment before relocating
+                            setTimeout(() => {
+                                relocateBtn.textContent = "Relocating Bases...";
+                                relocateBases(disabledBases);
+                                finishRelocation();
+                            }, 1500);
+                        }, 1000);
+                    } else {
+                        // No disabled bases, proceed directly to relocation
+                        relocateBtn.textContent = "Relocating Bases...";
+                        relocateBases(disabledBases);
+                        finishRelocation();
+                    }
+                } else {
+                    // Other modes - proceed directly to relocation
+                    relocateBtn.textContent = "Relocating Bases...";
+                    relocateBases(disabledBases);
+                    finishRelocation();
+                }
+                
+                function finishRelocation() {
+                    // Short delay for animation purposes
+                    setTimeout(() => {
+                        // Redraw the canvas with updated conditions
+                        redrawCanvas(true);
+                        
+                        // Animate the relocated bases
+                        if (relocatedBases.length > 0) {
+                            relocatedBases.forEach(relocation => {
+                                const toX = relocation.toLocation.x * cellSize + cellSize / 2;
+                                const toY = relocation.toLocation.y * cellSize + cellSize / 2;
+                                
+                                // Highlight the new base location
+                                const highlightDiv = document.createElement('div');
+                                highlightDiv.style.position = 'absolute';
+                                highlightDiv.style.left = (toX - cellSize / 2) + 'px';
+                                highlightDiv.style.top = (toY - cellSize / 2) + 'px';
+                                highlightDiv.style.width = cellSize + 'px';
+                                highlightDiv.style.height = cellSize + 'px';
+                                highlightDiv.style.borderRadius = '50%';
+                                highlightDiv.style.boxShadow = '0 0 0 5px rgba(0, 255, 0, 0.7)';
+                                highlightDiv.classList.add('highlight');
+                                document.getElementById('droneLayer').appendChild(highlightDiv);
+                            });
+                        }
+                        
+                        // Calculate and display updated metrics
+                        calculateMetrics(true);
+                        
+                        // Reset button
+                        setTimeout(() => {
+                            relocateBtn.textContent = originalText;
+                            relocateBtn.disabled = false;
+                        }, 1000);
+                    }, 1000);
+                }
+            }
+        }
+
+        // Relocate bases based on updated conditions
+        function relocateBases(disabledBases) {
+            // Store original base locations
+            const originalBases = [...selectedBaseLocations];
+            
+            // Calculate distances between cells and candidate bases
+            const distances = [];
+            for (let i = 0; i < gridSize * gridSize; i++) {
+                const cellX = Math.floor(i / gridSize);
+                const cellY = i % gridSize;
+                
+                const cellDistances = [];
+                for (let j = 0; j < candidateBaseLocations.length; j++) {
+                    const base = candidateBaseLocations[j];
+                    const dist = Math.sqrt((cellX - base.x) ** 2 + (cellY - base.y) ** 2);
+                    cellDistances.push(dist);
+                }
+                distances.push(cellDistances);
+            }
+            
+            // Create mapping of available bases
+            const availableBases = [];
+            for (let i = 0; i < selectedBaseLocations.length; i++) {
+                if (!disabledBases.includes(i)) {
+                    availableBases.push(i);
+                }
+            }
+            
+            // Create a set of disabled base locations to relocate
+            let basesToRelocate = [];
+            if (disabledBases.length > 0) {
+                basesToRelocate = [...disabledBases];
+            } else {
+                // If no bases are disabled, relocate up to 2 bases
+                const maxRelocations = Math.min(2, selectedBaseLocations.length);
+                
+                // Choose bases to relocate (could be more sophisticated)
+                for (let i = 0; i < maxRelocations; i++) {
+                    basesToRelocate.push(i);
+                }
+            }
+            
+            // Create a set of candidate base locations that are not currently occupied
+            const availableLocations = [];
+            for (let j = 0; j < candidateBaseLocations.length; j++) {
+                const isOccupied = selectedBaseLocations.some(
+                    base => base.x === candidateBaseLocations[j].x && base.y === candidateBaseLocations[j].y
+                );
+                
+                if (!isOccupied) {
+                    availableLocations.push(j);
+                }
+            }
+            
+            // Calculate benefit score for each available location
+            // based on updated search probabilities
+            const locationScores = [];
+            for (const locIdx of availableLocations) {
+                let score = 0;
+                
+                for (let i = 0; i < gridSize * gridSize; i++) {
+                    const dist = distances[i][locIdx];
+                    if (dist <= droneRange) {
+                        // Benefit is updated probability weighted by distance
+                        score += updatedSearchProbabilities[i] * (1 - gamma * (dist / droneRange));
+                    }
+                }
+                
+                locationScores.push({ idx: locIdx, score });
+            }
+            
+            // Sort locations by score
+            locationScores.sort((a, b) => b.score - a.score);
+            
+            // Relocate bases
+            relocatedBases = [];
+            
+            for (let i = 0; i < basesToRelocate.length; i++) {
+                if (i < locationScores.length) {
+                    const baseToRelocate = basesToRelocate[i];
+                    const newLocIdx = locationScores[i].idx;
+                    
+                    // Record relocation
+                    relocatedBases.push({
+                        fromIndex: baseToRelocate,
+                        fromLocation: { ...selectedBaseLocations[baseToRelocate] },
+                        toLocation: { ...candidateBaseLocations[newLocIdx] }
+                    });
+                    
+                    // Update base location
+                    selectedBaseLocations[baseToRelocate] = { ...candidateBaseLocations[newLocIdx] };
+                }
+            }
+            
+            // Recalculate coverage with relocated bases
+            cellCoverage = Array(gridSize * gridSize).fill(false);
+            closestBase = Array(gridSize * gridSize).fill(-1);
+            
+            for (let i = 0; i < gridSize * gridSize; i++) {
+                let minDist = Infinity;
+                let closestBaseIdx = -1;
+                
+                for (let j = 0; j < selectedBaseLocations.length; j++) {
+                    // Skip disabled bases that weren't relocated
+                    if (disabledBases.includes(j) && !relocatedBases.some(rb => rb.fromIndex === j)) {
+                        continue;
+                    }
+                    
+                    const baseIdx = candidateBaseLocations.findIndex(
+                        b => b.x === selectedBaseLocations[j].x && b.y === selectedBaseLocations[j].y
+                    );
+                    const dist = distances[i][baseIdx];
+                    
+                    if (dist <= droneRange && dist < minDist) {
+                        minDist = dist;
+                        closestBaseIdx = j;
+                    }
+                }
+                
+                if (closestBaseIdx !== -1) {
+                    cellCoverage[i] = true;
+                    closestBase[i] = closestBaseIdx;
+                }
+            }
+        }
+
+        // Calculate metrics
+        function calculateMetrics(useUpdated = false) {
+            const probs = useUpdated ? updatedSearchProbabilities : searchProbabilities;
+            
+            // Calculate coverage
+            const numCoveredCells = cellCoverage.filter(covered => covered).length;
+            const coveragePct = (numCoveredCells / (gridSize * gridSize)) * 100;
+            
+            // Calculate weighted coverage
+            let totalProb = 0;
+            let coveredProb = 0;
+            
+            for (let i = 0; i < probs.length; i++) {
+                totalProb += probs[i];
+                if (cellCoverage[i]) {
+                    coveredProb += probs[i];
+                }
+            }
+            
+            const weightedCoveragePct = (coveredProb / totalProb) * 100;
+            
+            // Calculate mean distance to nearest base for covered cells
+            let totalDistance = 0;
+            let coveredCount = 0;
+            
+            for (let i = 0; i < cellCoverage.length; i++) {
+                if (cellCoverage[i]) {
+                    const cellX = Math.floor(i / gridSize);
+                    const cellY = i % gridSize;
+                    const baseIdx = closestBase[i];
+                    const base = selectedBaseLocations[baseIdx];
+                    
+                    const dist = Math.sqrt((cellX - base.x) ** 2 + (cellY - base.y) ** 2);
+                    totalDistance += dist;
+                    coveredCount++;
+                }
+            }
+            
+            const meanDistance = coveredCount > 0 ? totalDistance / coveredCount : 0;
+            
+            // Calculate Gini coefficient for distance to nearest base
+            const allDistances = [];
+            
+            for (let i = 0; i < cellCoverage.length; i++) {
+                if (cellCoverage[i]) {
+                    const cellX = Math.floor(i / gridSize);
+                    const cellY = i % gridSize;
+                    const baseIdx = closestBase[i];
+                    const base = selectedBaseLocations[baseIdx];
+                    
+                    const dist = Math.sqrt((cellX - base.x) ** 2 + (cellY - base.y) ** 2);
+                    allDistances.push(dist);
+                }
+            }
+            
+            let gini = 0;
+            if (allDistances.length > 1) {
+                // Sort distances
+                allDistances.sort((a, b) => a - b);
+                
+                // Calculate Gini coefficient
+                let sumOfAbsoluteDifferences = 0;
+                for (let i = 0; i < allDistances.length; i++) {
+                    for (let j = 0; j < allDistances.length; j++) {
+                        sumOfAbsoluteDifferences += Math.abs(allDistances[i] - allDistances[j]);
+                    }
+                }
+                
+                const mean = allDistances.reduce((a, b) => a + b, 0) / allDistances.length;
+                gini = sumOfAbsoluteDifferences / (2 * allDistances.length * allDistances.length * mean);
+            }
+            
+            // Update metrics display
+            coverageMetric.textContent = `${coveragePct.toFixed(1)}%`;
+            weightedCoverageMetric.textContent = `${weightedCoveragePct.toFixed(1)}%`;
+            meanDistanceMetric.textContent = `${meanDistance.toFixed(1)} km`;
+            giniMetric.textContent = gini.toFixed(3);
+            
+            return { coveragePct, weightedCoveragePct, meanDistance, gini };
+        }
+
+        // Redraw the canvas
+        function redrawCanvas(showUpdated = false) {
+            // Clear the canvas
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, simulationCanvas.width, simulationCanvas.height);
+            
+            // Draw grid
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 0.5;
+            
+            for (let i = 0; i <= gridSize; i++) {
+                const pos = i * cellSize;
+                // Vertical line
+                ctx.beginPath();
+                ctx.moveTo(pos, 0);
+                ctx.lineTo(pos, simulationCanvas.height);
+                ctx.stroke();
+                
+                // Horizontal line
+                ctx.beginPath();
+                ctx.moveTo(0, pos);
+                ctx.lineTo(simulationCanvas.width, pos);
+                ctx.stroke();
+            }
+            
+            // Draw search probabilities
+            if (showUpdated && updatedSearchProbabilities.length > 0) {
+                for (let i = 0; i < gridSize; i++) {
+                    for (let j = 0; j < gridSize; j++) {
+                        const idx = i * gridSize + j;
+                        const prob = updatedSearchProbabilities[idx];
+                        
+                        // Use red with alpha based on probability
+                        const alpha = prob;
+                        ctx.fillStyle = `rgba(255, 0, 0, ${alpha * 0.5})`;
+                        ctx.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
+                    }
+                }
+            } else {
+                drawSearchProbabilities();
+            }
+            
+            // Draw base coverage and locations
+            if (optimizedLocations) {
+                drawSelectedBaseLocations();
+                
+                // Draw relocation paths if any
+                if (showUpdated && relocatedBases.length > 0) {
+                    for (const relocation of relocatedBases) {
+                        const fromX = relocation.fromLocation.x * cellSize + cellSize / 2;
+                        const fromY = relocation.fromLocation.y * cellSize + cellSize / 2;
+                        const toX = relocation.toLocation.x * cellSize + cellSize / 2;
+                        const toY = relocation.toLocation.y * cellSize + cellSize / 2;
+                        
+                        // Check if path would go outside the map boundaries
+                        // and create a curved path instead of a straight line that might extend off-map
+                        
+                        // Draw path with bezier curve to keep arrows within map boundaries
+                        ctx.beginPath();
+                        ctx.moveTo(fromX, fromY);
+                        
+                        // Calculate control points for the curve to keep it within the map
+                        const mapWidth = cellSize * gridSize;
+                        const mapHeight = cellSize * gridSize;
+                        
+                        // Determine distance and angle of relocation
+                        const dx = toX - fromX;
+                        const dy = toY - fromY;
+                        const distance = Math.sqrt(dx*dx + dy*dy);
+                        
+                        // Use control points to create a curve that stays within the map
+                        // The further the points, the more curved the line
+                        const midX = (fromX + toX) / 2;
+                        const midY = (fromY + toY) / 2;
+                        
+                        // Adjust control point based on distance
+                        const curveOffset = Math.min(distance * 0.3, 50); // Limit the curve intensity
+                        
+                        // Create a perpendicular control point
+                        const perpX = midX - dy * 0.5;
+                        const perpY = midY + dx * 0.5;
+                        
+                        // Ensure control point is within map boundaries
+                        const ctrlX = Math.max(cellSize, Math.min(perpX, mapWidth - cellSize));
+                        const ctrlY = Math.max(cellSize, Math.min(perpY, mapHeight - cellSize));
+                        
+                        // Draw the curved path
+                        ctx.quadraticCurveTo(ctrlX, ctrlY, toX, toY);
+                        ctx.strokeStyle = 'purple';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                        
+                        // Draw arrowhead
+                        // Calculate angle of arrival at the endpoint based on the curve
+                        const arrowLength = 10;
+                        
+                        // Get the direction at the end of the curve
+                        const endAngle = Math.atan2(toY - ctrlY, toX - ctrlX);
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(toX, toY);
+                        ctx.lineTo(toX - arrowLength * Math.cos(endAngle - Math.PI/6), 
+                                  toY - arrowLength * Math.sin(endAngle - Math.PI/6));
+                        ctx.lineTo(toX - arrowLength * Math.cos(endAngle + Math.PI/6), 
+                                  toY - arrowLength * Math.sin(endAngle + Math.PI/6));
+                        ctx.closePath();
+                        ctx.fillStyle = 'purple';
+                        ctx.fill();
+                    }
+                }
+            } else {
+                drawCandidateBaseLocations();
+            }
+        }
+
+        // Update metrics display
+        function updateMetrics(coverage, weightedCoverage, meanDist, gini) {
+            coverageMetric.textContent = `${coverage.toFixed(1)}%`;
+            weightedCoverageMetric.textContent = `${weightedCoverage.toFixed(1)}%`;
+            meanDistanceMetric.textContent = `${meanDist.toFixed(1)} km`;
+            giniMetric.textContent = gini.toFixed(3);
+        }
+
+        // Event listeners
+        gridSizeSelect.addEventListener('change', function() {
+            gridSize = parseInt(this.value);
+            cellSize = simulationCanvas.width / gridSize;
+            
+            // Show warning for large grid sizes
+            if (gridSize > 30) {
+                gridSizeWarning.style.display = 'block';
+            } else {
+                gridSizeWarning.style.display = 'none';
+            }
+            
+            // Reset simulation
+            searchProbabilities = [];
+            candidateBaseLocations = [];
+            selectedBaseLocations = [];
+            cellCoverage = [];
+            closestBase = [];
+            generatedProbabilities = false;
+            optimizedLocations = false;
+            
+            optimizeButton.disabled = true;
+            relocateButton.disabled = true;
+            
+            // Reset metrics
+            updateMetrics(0, 0, 0, 0);
+            
+            initCanvas();
+        });
+
+        numBasesSlider.addEventListener('input', function() {
+            numBases = parseInt(this.value);
+            numBasesValue.textContent = numBases;
+            
+            if (optimizedLocations) {
+                optimizeBaseLocations();
+            }
+        });
+
+        droneRangeSlider.addEventListener('input', function() {
+            droneRange = parseInt(this.value);
+            droneRangeValue.textContent = droneRange;
+            
+            if (optimizedLocations) {
+                optimizeBaseLocations();
+            }
+        });
+
+        gammaSlider.addEventListener('input', function() {
+            gamma = parseFloat(this.value) / 100;
+            gammaValue.textContent = gamma.toFixed(2);
+            
+            if (optimizedLocations) {
+                optimizeBaseLocations();
+            }
+        });
+
+        baseFailureProbabilitySlider.addEventListener('input', function() {
+            baseFailureProbability = parseFloat(this.value) / 100;
+            baseFailureProbabilityValue.textContent = baseFailureProbability.toFixed(2);
+            
+            if (optimizedLocations && mode === 'uncertainty') {
+                optimizeBaseLocations();
+            }
+        });
+
+        lambdaSlider.addEventListener('input', function() {
+            lambda = parseFloat(this.value) / 100;
+            lambdaValue.textContent = lambda.toFixed(2);
+            
+            if (optimizedLocations && mode === 'ppr') {
+                optimizeBaseLocations();
+            }
+        });
+
+        modeSelect.addEventListener('change', function() {
+            mode = this.value;
+            
+            // Show/hide relevant controls
+            if (mode === 'uncertainty') {
+                uncertaintyControls.style.display = 'block';
+                pprControls.style.display = 'none';
+            } else if (mode === 'ppr') {
+                uncertaintyControls.style.display = 'none';
+                pprControls.style.display = 'block';
+            } else {
+                uncertaintyControls.style.display = 'none';
+                pprControls.style.display = 'none';
+            }
+            
+            if (optimizedLocations) {
+                optimizeBaseLocations();
+            }
+        });
+
+        generateButton.addEventListener('click', function() {
+            generateSearchProbabilities();
+        });
+
+        optimizeButton.addEventListener('click', function() {
+            optimizeBaseLocations();
+        });
+
+        relocateButton.addEventListener('click', function() {
+            simulateDisasterAndRelocate();
+        });
+
+        // Tab functionality
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and contents
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                const tabContentId = `${tab.dataset.tab}-tab`;
+                document.getElementById(tabContentId).classList.add('active');
+            });
+        });
+
+        // Initial setup
+        window.addEventListener('load', function() {
+            initCanvas();
+        });
+        
+        window.addEventListener('resize', function() {
+            // Only resize if container width has changed significantly
+            const containerWidth = simulationCanvas.parentElement.clientWidth;
+            if (Math.abs(containerWidth - simulationCanvas.width) > 50) {
+                simulationCanvas.width = containerWidth;
+                simulationCanvas.height = containerWidth;
+                cellSize = simulationCanvas.width / gridSize;
+                redrawCanvas();
+            }
+        });
+    </script>
+</body>
+</html>
