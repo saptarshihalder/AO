@@ -74,22 +74,6 @@ Z=−Coverage+γ∑i∈covered​pi​⋅DNBi​![]()
 
 **PPR Stage**: Rerun optimization after disaster effects to reposition selected bases.
 
-
-## 📂 Directory Structure
-
-    .
-    ├── app.py              # Streamlit frontend
-    ├── cli.py              # Command-line interface
-    ├── model/
-    │   ├── optimizer.py    # Optimization formulation
-    │   ├── grid.py         # Grid setup and probability assignment
-    │   ├── equity.py       # Gini calculation
-    │   └── relocation.py   # Planned relocation logic
-    ├── data/               # Sample raster inputs
-    ├── docs/               # Model explanation and screenshots
-    └── tests/              # Unit tests
-
-
 ## 📖 Citation
 
 If you use this simulation in coursework or academic projects, cite:
