@@ -27,16 +27,6 @@ It demonstrates how to strategically locate drone bases to ensure **maximum cove
 
 - **Interactive Interface**: Sliders to modify number of bases, drone range, gamma, uncertainty `r`, etc. Coverage, DNB, and equity maps update live.
 
-
-## 📦 Installation
-
-    git clone https://github.com/your-org/drone-base-optimization.git
-    cd drone-base-optimization
-    python -m venv venv
-    source venv/bin/activate  # or venv\Scripts\activate on Windows
-    pip install -r requirements.txt
-
-
 ## 🚀 Running the Simulation
 
 **GUI Mode**
